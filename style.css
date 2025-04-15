@@ -1,0 +1,107 @@
+/* Basic reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Roboto", sans-serif;
+  line-height: 1.6;
+  background-color: #fff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh; /* Use min-height to ensure content stretches to at least viewport height */
+  color: #333; /* Set a default text color */
+}
+
+.container {
+  background-color: transparent;
+  padding: 20px;
+  box-shadow: none;
+  width: 400px;
+  max-width: 90%;
+  text-align: center;
+  transition: opacity 0.5s ease, transform 0.5s ease; /* Combine transitions for cleaner code */
+}
+
+h1 {
+  font-size: 1.8em;
+  margin-bottom: 15px;
+  color: #000;
+}
+
+h2  {
+  font-size: 1.5em;
+  margin-bottom: 20px;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+label {
+  display: block;
+  margin-bottom: 5px;
+  color: #555;
+}
+
+/* Apply input styles to all text-based inputs */
+input[type="text"], 
+input[type="email"],
+input[type="password"] {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+/* Style for all buttons */
+button,
+button[type="submit"] {
+  background-color: transparent;
+  color: #000;
+  padding: 10px 15px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.3s ease; /* Add hover effect */
+  width: 100%; /* Make buttons fill container width */
+  margin-bottom: 8px; /* Reduce bottom margin */
+}
+
+button:hover,
+button[type="submit"]:hover {
+  background-color: #f0f0f0;
+}
+
+.page-fade-out {
+  opacity: 0;
+}
+
+.error-message {
+  color: red;
+}
+.page-fade-in {
+  opacity: 1;
+}
+
+.page-slide-in {
+  transform: translateX(0%);
+}
+
+.back-link,
+.forgot-password-link {
+  color: #000;
+  text-decoration: none;
+  display: block;
+  margin-top: 15px;
+  font-size: 14px;
+}
+
+.back-link:hover,
+.forgot-password-link:hover {
+  text-decoration: underline;
+}
