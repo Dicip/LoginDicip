@@ -3,13 +3,15 @@ const fs = require('fs');
 const path = require('path');
 const url = require('url');
 const sql = require('mssql');
-const bodyParser = require('body-parser');
+const bcrypt = require('bcrypt');
+
+const port = 5001;
 
 // Configuración de la base de datos
-const config = {
-    user: 'tu_usuario',
-    password: 'tu_contraseña',
-    server: 'localhost',
+const dbConfig = {
+    user: 'sa',
+    password: '12345',
+    server: 'DITZ-23-DIEGO-A\\SQLEXPRESS,1433',
     database: 'ClinicaVeterinaria',
     options: {
         encrypt: false,
@@ -18,42 +20,70 @@ const config = {
 };
 
 const server = http.createServer(async (req, res) => {
-    // Middleware para parsear el body
-    bodyParser.json()(req, res, async () => {
-        if (req.method === 'POST' && req.url === '/registro') {
+    const parsedUrl = url.parse(req.url, true);
+    let pathname = `.${parsedUrl.pathname}`;
+
+    // Manejar POST para registro
+    if (req.method === 'POST' && parsedUrl.pathname === '/registro') {
+        let body = '';
+        req.on('data', chunk => body += chunk.toString());
+        req.on('end', async () => {
             try {
-                const { nombre, email, usuario, password } = req.body;
+                const { nombre, email, usuario, password } = JSON.parse(body);
                 
-                // Validación básica
+                // Validaciones básicas
                 if (!nombre || !email || !usuario || !password) {
-                    res.writeHead(400, { 'Content-Type': 'application/json' });
-                    return res.end(JSON.stringify({ error: 'Todos los campos son requeridos' }));
+                    sendResponse(res, 400, { error: 'Todos los campos son requeridos' });
+                    return;
                 }
 
                 // Hash de la contraseña
                 const hashedPassword = await bcrypt.hash(password, 10);
 
-                // Conexión a la base de datos
-                await sql.connect(config);
+                // Conexión a DB
+                await sql.connect(dbConfig);
                 const result = await sql.query`
                     INSERT INTO dbo.Clientes (Nombre, Email, Usuario, Contraseña)
                     VALUES (${nombre}, ${email}, ${usuario}, ${hashedPassword})
                 `;
 
-                res.writeHead(201, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ message: 'Usuario registrado exitosamente' }));
+                sendResponse(res, 201, { message: 'Usuario registrado exitosamente' });
             } catch (error) {
-                console.error(error);
-                res.writeHead(500, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ error: 'Error al registrar el usuario' }));
+                console.error('Error:', error);
+                const message = error.number === 2627 ? 'El email o usuario ya existe' : 'Error en el servidor';
+                sendResponse(res, 500, { error: message });
             }
-        } else {
-            // Lógica original para servir archivos estáticos
-            // ... (mantén el código existente para manejar GET requests)
-        }
-    });
+        });
+    } else {
+        // Servir archivos estáticos
+        handleStaticFiles(req, res, parsedUrl, pathname);
+    }
 });
 
+function sendResponse(res, status, data) {
+    res.writeHead(status, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(data));
+}
+
+async function handleStaticFiles(req, res, parsedUrl, pathname) {
+    const mimeTypes = {
+        '.html': 'text/html',
+        '.js': 'text/javascript',
+        '.css': 'text/css',
+        '.png': 'image/png'
+    };
+
+    try {
+        const content = await fs.promises.readFile(pathname);
+        const ext = path.parse(pathname).ext;
+        res.writeHead(200, { 'Content-Type': mimeTypes[ext] || 'text/plain' });
+        res.end(content);
+    } catch (error) {
+        res.writeHead(404, { 'Content-Type': 'text/html' });
+        res.end('<h1>404 No encontrado</h1>');
+    }
+}
+
 server.listen(port, () => {
-    console.log(`Server running on http://localhost:${port}`);
+    console.log(`Servidor corriendo en http://localhost:${port}`);
 });
