@@ -2,59 +2,58 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const url = require('url');
+const sql = require('mssql');
+const bodyParser = require('body-parser');
 
-const port = 5001;
-
-const server = http.createServer((req, res) => {
-  // Parsear la URL
-  const parsedUrl = url.parse(req.url);
-  let pathname = `.${parsedUrl.pathname}`;
-  
-  // Mapear URLs a archivos
-  if (pathname === './') {
-    pathname = './index.html';
-  } else if (pathname === './registro') {
-    pathname = './registro.html';
-  }
-
-  // Obtener extensión del archivo
-  const ext = path.parse(pathname).ext;
-  
-  // Tipos MIME
-  const mimeTypes = {
-    '.html': 'text/html',
-    '.js': 'text/javascript',
-    '.css': 'text/css',
-    '.json': 'application/json',
-    '.png': 'image/png',
-    '.jpg': 'image/jpg',
-    '.gif': 'image/gif',
-    '.svg': 'image/svg+xml',
-  };
-
-  // Verificar si el archivo existe
-  fs.exists(pathname, (exist) => {
-    if (!exist) {
-      // Archivo no encontrado
-      res.writeHead(404, {'Content-Type': 'text/html'});
-      res.end('<h1>404 Not Found</h1>');
-      return;
+// Configuración de la base de datos
+const config = {
+    user: 'tu_usuario',
+    password: 'tu_contraseña',
+    server: 'localhost',
+    database: 'ClinicaVeterinaria',
+    options: {
+        encrypt: false,
+        trustServerCertificate: true
     }
+};
 
-    // Leer y servir el archivo
-    fs.readFile(pathname, (err, data) => {
-      if (err) {
-        res.writeHead(500);
-        res.end(`Error loading file: ${err}`);
-      } else {
-        // Establecer el tipo de contenido basado en la extensión
-        res.writeHead(200, {'Content-Type': mimeTypes[ext] || 'text/plain'});
-        res.end(data);
-      }
+const server = http.createServer(async (req, res) => {
+    // Middleware para parsear el body
+    bodyParser.json()(req, res, async () => {
+        if (req.method === 'POST' && req.url === '/registro') {
+            try {
+                const { nombre, email, usuario, password } = req.body;
+                
+                // Validación básica
+                if (!nombre || !email || !usuario || !password) {
+                    res.writeHead(400, { 'Content-Type': 'application/json' });
+                    return res.end(JSON.stringify({ error: 'Todos los campos son requeridos' }));
+                }
+
+                // Hash de la contraseña
+                const hashedPassword = await bcrypt.hash(password, 10);
+
+                // Conexión a la base de datos
+                await sql.connect(config);
+                const result = await sql.query`
+                    INSERT INTO dbo.Clientes (Nombre, Email, Usuario, Contraseña)
+                    VALUES (${nombre}, ${email}, ${usuario}, ${hashedPassword})
+                `;
+
+                res.writeHead(201, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ message: 'Usuario registrado exitosamente' }));
+            } catch (error) {
+                console.error(error);
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'Error al registrar el usuario' }));
+            }
+        } else {
+            // Lógica original para servir archivos estáticos
+            // ... (mantén el código existente para manejar GET requests)
+        }
     });
-  });
 });
 
 server.listen(port, () => {
-  console.log(`Server running on http://localhost:${port}`);
+    console.log(`Server running on http://localhost:${port}`);
 });
