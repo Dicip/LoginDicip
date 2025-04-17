@@ -11,11 +11,11 @@ const port = 5001;
 const dbConfig = {
     user: 'sa',
     password: '12345',
-    server: 'DITZ-23-DIEGO-A\\SQLEXPRESS,1433',
+    server: 'DITZ-23-DIEGO-A\SQLEXPRESS,1433',
     database: 'ClinicaVeterinaria',
     options: {
         encrypt: false,
-        trustServerCertificate: true
+        trustServerCertificate: false
     }
 };
 
